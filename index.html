@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PN3C BUNKER - V7 Businessman</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+body{margin:0;font-family:Arial;background:#eef2f7}
+header{background:#0d47a1;color:white;padding:10px;text-align:center;font-weight:900}
+.box{max-width:600px;margin:10px auto;background:white;border-radius:12px;padding:15px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.box h2{color:#0d47a1;font-size:14px;text-align:center;margin:0 0 10px 0}
+input{width:100%;padding:12px;border:2px solid #ccc;border-radius:8px;box-sizing:border-box}
+button.verif{width:100%;margin-top:8px;background:#0d47a1;color:white;border:none;padding:12px;border-radius:8px;font-weight:700}
+#res{margin-top:10px;padding:10px;border-radius:8px;display:none;text-align:center;font-weight:700}
+.vert{background:#e8f5e9;color:#2e7d32;border:1px solid #2e7d32}
+.rouge{background:#ffebee;color:#c62828;border:1px solid #c62828}
+#map{height:50vh;width:100%;border-radius:12px;margin-top:10px}
+.sos{position:fixed;bottom:0;left:0;right:0;background:white;padding:12px;text-align:center}
+.sos button{background:#c62828;color:white;border:none;padding:16px 35px;border-radius:30px;font-weight:900;font-size:16px}
+</style>
+</head>
+<body>
+<header>PN3C - BUNKER OFFICIEL - PROTECTION CIVILE</header>
+<div class="box">
+<h2>Vous avez un doute sur un lien ? Mettez le ici pour l'authentification</h2>
+<input id="lien" placeholder="Collez votre lien ici">
+<button class="verif" onclick="verif()">Vérifier</button>
+<div id="res"></div>
+<div id="map"></div>
+</div>
+<div class="sos"><button onclick="goSOS()">SOS - MA POSITION</button><div style="font-size:10px;color:#888;margin-top:5px">Businessman - Service civil - Police fait son travail</div></div>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+let map=L.map('map').setView([5.36,-4.00],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+let myMark=null;
+if(navigator.geolocation){
+navigator.geolocation.watchPosition(p=>{
+let lat=p.coords.latitude,lng=p.coords.longitude;
+if(!myMark){myMark=L.marker([lat,lng]).addTo(map).bindPopup("VOUS ÊTES ICI").openPopup();map.setView([lat,lng],16);}
+else{myMark.setLatLng([lat,lng]);}
+L.circleMarker([lat+0.0015,lng+0.001],{radius:7,color:'#0d47a1',fillColor:'#42a5f5',fillOpacity:0.9}).addTo(map);
+L.circleMarker([lat-0.001,lng+0.0012],{radius:7,color:'#0d47a1',fillColor:'#42a5f5',fillOpacity:0.9}).addTo(map);
+L.circleMarker([lat+0.0008,lng-0.0015],{radius:7,color:'#0d47a1',fillColor:'#42a5f5',fillOpacity:0.9}).addTo(map);
+});
+}
+function verif(){
+let v=document.getElementById('lien').value.toLowerCase().trim();
+let r=document.getElementById('res');
+if(!v){r.style.display='block';r.className='rouge';r.innerText='Collez un lien';return;}
+let ok=['orange.ci','mtn.ci','moov-africa.ci','wave.ci','gouv.ci'];
+if(ok.some(d=>v.includes(d))){r.style.display='block';r.className='vert';r.innerHTML='✅ Lien authentique';}
+else{r.style.display='block';r.className='rouge';r.innerHTML='🚨 Lien non authentique - Méfiance';}
+}
+function goSOS(){
+if(myMark){let p=myMark.getLatLng();window.open('https://wa.me/?text=🚨 SOS PN3C https://www.google.com/maps?q='+p.lat+','+p.lng);}
+else{alert('Active ton GPS');}
+}
+</script>
+</body>
+                                                              </html>
