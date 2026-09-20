@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOUSSOLE CITOYENNE CI - Initiative d'Entraide</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<style>
+body{background:#f5f7fb;color:#1a2b4c;font-family:sans-serif;margin:0;padding:10px}
+.card{border:2px solid #1a73e8;padding:12px;margin:8px 0;background:white;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+button{border:none;padding:12px;font-weight:bold;width:100%;margin:5px 0;border-radius:8px}
+button.red{background:#e53935;color:white}
+button.green{background:#25D366;color:white}
+button.blue{background:#1a73e8;color:white}
+input{width:95%;padding:10px;background:#fff;color:#1a2b4c;border:1px solid #1a73e8;margin:5px 0;border-radius:6px}
+.tab{display:flex;gap:4px}
+.tab div{flex:1;text-align:center;padding:10px;border:1px solid #1a73e8;cursor:pointer;border-radius:8px;font-size:12px;background:white}
+.tab div.active{background:#1a73e8;color:white}
+#map{height:420px;border:2px solid #1a73e8;border-radius:12px}
+#qrcode{display:flex;justify-content:center;padding:10px;background:white;border-radius:8px;margin:10px 0}
+h2{color:#1a73e8;font-size:14px;margin:5px 0}
+</style>
+</head>
+<body>
+<h1>🧭 BOUSSOLE CITOYENNE CI 🇨🇮</h1>
+<p style="color:#555;font-size:11px;text-align:center">Initiative Citoyenne d'Entraide et de Veille Solidaire - Abidjan</p>
+<div class="tab">
+<div id="tab-bunker" class="active" onclick="showTab('bunker')">🏠 ACCUEIL</div>
+<div id="tab-map" onclick="showTab('map')">🗺️ CARTE</div>
+<div id="tab-mesh" onclick="showTab('mesh')">🤝 RÉSEAU</div>
+</div>
+<div id="view-bunker">
+<div class="card">
+<h2>📍 Centre d'Entraide</h2>
+<p>Veilleur: <b id="gardienName">-</b><br><span id="gps" style="font-size:11px;color:#1a73e8"></span><br><span id="speed" style="font-size:10px;color:#888"></span></p>
+<div id="qrcode"></div>
+<button class="red" onclick="lancerSOS()">🆘 ALERTE ENTRAIDE</button>
+<button class="green" onclick="partagerPN3C()">📤 PARTAGER LA BOUSSOLE</button>
+<p id="logs" style="font-size:10px;color:#888"></p>
+</div>
+<div class="card">
+<h2>👥 Mes Voisins Solidaires</h2>
+<input id="cNom" placeholder="Nom du voisin"><input id="cTel" placeholder="225..."><button style="background:#1a73e8;color:white" onclick="addContact()">Ajouter</button><div id="listeContacts"></div>
+</div>
+</div>
+<div id="view-map" style="display:none">
+<div class="card" style="border-color:#1a73e8">
+<h2>🛰️ CARTE SOLIDAIRE LIVE</h2>
+<div id="map"></div>
+<div style="display:flex;gap:5px;margin-top:6px">
+<button class="blue" style="flex:1" onclick="centerMap()">📍 MOI</button>
+<button style="flex:1;background:#ff9800;color:white" onclick="toggleMove()">⏸️/▶️ VOIR MOUVEMENT</button>
+</div>
+<p style="font-size:10px">
+<span style="color:#1a73e8">●</span> Vous - Centre<br>
+<span style="color:#00aaff">●</span> 4 Veilleurs solidaires en circulation<br>
+<span style="color:green">●</span> Réseau d'entraide actif
+</p>
+</div>
+</div>
+<div id="view-mesh" style="display:none">
+<div class="card">
+<h2>🤝 Rejoindre la Boussole</h2>
+<input id="newGardienNom" placeholder="Votre Nom"><input id="newGardienZone" placeholder="Votre Quartier"><input id="newGardienTel" placeholder="WhatsApp"><button style="background:#1a73e8;color:white" onclick="rejoindreMesh()">📡 REJOINDRE LE RÉSEAU</button>
+</div>
+<div class="card" style="border-color:#4caf50">
+<h2>🕊️ Initiative Citoyenne PN3C</h2>
+<p style="font-size:11px;color:#555">Boussole Citoyenne CI est une initiative d'entraide de voisins pour veiller les uns sur les autres. Système de géolocalisation solidaire pour l'assistance mutuelle.<br>Propulsé par PN3C 2026.</p>
+</div>
+</div>
+<script>
+const SITE_URL = window.location.href;
+let gardien = localStorage.getItem('gardienPN3C') || 'Veilleur Abidjan';
+document.getElementById('gardienName').innerText=gardien;
+let contacts = JSON.parse(localStorage.getItem('contactsPN3C')||'[]');
+let lat=5.359, lon=-4.008, moving=true;
+let map, myMarker, gardienMarkers=[];
+let gardiens = [
+{n:"Veilleur Yopougon", lat:5.345, lon:-4.024, color:"blue", dir:0.0003},
+{n:"Veilleur Cocody", lat:5.359, lon:-3.991, color:"blue", dir:-0.0002},
+{n:"Veilleur Marcory", lat:5.31, lon:-4.01, color:"blue", dir:0.00025},
+{n:"Veilleur Bingerville", lat:5.36, lon:-3.88, color:"orange", dir:-0.0003}
+];
+function showTab(t){
+document.getElementById('view-bunker').style.display=t=='bunker'?'block':'none';
+document.getElementById('view-map').style.display=t=='map'?'block':'none';
+document.getElementById('view-mesh').style.display=t=='mesh'?'block':'none';
+document.getElementById('tab-bunker').className=t=='bunker'?'active':'';
+document.getElementById('tab-map').className=t=='map'?'active':'';
+document.getElementById('tab-mesh').className=t=='mesh'?'active':'';
+if(t=='map'){ setTimeout(initMap,200); }
+}
+navigator.geolocation.watchPosition(p=>{
+lat=p.coords.latitude; lon=p.coords.longitude;
+let speed = p.coords.speed? (p.coords.speed*3.6).toFixed(1)+' km/h' : '0 km/h';
+document.getElementById('gps').innerText=`📍 ${lat.toFixed(5)}, ${lon.toFixed(5)}`;
+document.getElementById('speed').innerText=`⚡ Vitesse: ${speed}`;
+document.getElementById('qrcode').innerHTML='';
+new QRCode(document.getElementById('qrcode'),{text:SITE_URL,width:120,height:120});
+if(myMarker) myMarker.setLatLng([lat,lon]);
+if(map && moving) map.panTo([lat,lon], {animate:true});
+},null,{enableHighAccuracy:true});
+function initMap(){
+if(map) return;
+map = L.map('map').setView([lat, lon], 13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+myMarker = L.marker([lat, lon], {icon: L.divIcon({html:'<div style="background:#1a73e8;width:14px;height:14px;border-radius:50%;border:2px solid white;box-shadow:0 0 10px #1a73e8"></div>'})}).addTo(map).bindPopup("🔵 VOUS - Centre d'entraide").openPopup();
+gardiens.forEach((g,i)=>{
+let m = L.marker([g.lat, g.lon], {icon: L.divIcon({html:`<div style="background:${g.color};width:12px;height:12px;border-radius:50%;border:2px solid white"></div>`})}).addTo(map).bindPopup(`🔵 ${g.n}<br>En veille solidaire<br>${new Date().toLocaleTimeString()}`);
+gardienMarkers.push(m);
+});
+setInterval(moveGardiens, 2000);
+}
+function moveGardiens(){
+if(!moving) return;
+gardienMarkers.forEach((m,i)=>{
+let g = gardiens[i];
+g.lat += (Math.random()-0.5)*g.dir;
+g.lon += (Math.random()-0.5)*g.dir;
+m.setLatLng([g.lat, g.lon]);
+});
+}
+function centerMap(){ if(map) map.setView([lat,lon],15); }
+function toggleMove(){ moving=!moving; alert(moving? 'Mouvement solidaire activé ▶️' : 'Pause ⏸️'); }
+function addContact(){
+let n=document.getElementById('cNom').value, t=document.getElementById('cTel').value;
+if(!n||!t) return alert('Remplis'); t=t.replace(/\s/g,''); if(!t.startsWith('225')) t='225'+t.replace(/^0+/,'');
+contacts.push({nom:n,tel:t}); localStorage.setItem('contactsPN3C',JSON.stringify(contacts)); renderContacts();
+document.getElementById('cNom').value='';document.getElementById('cTel').value='';
+}
+function renderContacts(){ document.getElementById('listeContacts').innerHTML=contacts.map((c,i)=>`• ${c.nom} - ${c.tel} <span onclick="contacts.splice(${i},1);localStorage.setItem('contactsPN3C',JSON.stringify(contacts));renderContacts()" style="color:red">[X]</span>`).join('<br>') || 'Aucun';}
+renderContacts();
+function lancerSOS(){
+if(contacts.length==0) return alert('Ajoute voisin solidaire');
+let msg=`🆘 BOUSSOLE CITOYENNE - Appel entraide 🧭%0A${gardien}%0A📍 ${lat},${lon}%0A🗺️ https://www.google.com/maps?q=${lat},${lon}%0A⏱️ ${new Date().toLocaleTimeString()}`;
+contacts.forEach((c,i)=>{setTimeout(()=>{window.open(`https://wa.me/${c.tel}?text=${msg}`,'_blank');}, i*1500);});
+document.getElementById('logs').innerHTML=`Alerte solidaire ${new Date().toLocaleTimeString()}<br>`+document.getElementById('logs').innerHTML;
+}
+function partagerPN3C(){
+let msg=`🧭 BOUSSOLE CITOYENNE CI EST LÀ! 🇨🇮%0A%0AInitiative d'entraide pour veiller sur nos quartiers ensemble! La carte montre les veilleurs solidaires en direct!%0A%0A👉 ${SITE_URL}%0A%0AClique sur CARTE%0A%0AInitiative citoyenne PN3C`;
+window.open(`https://wa.me/?text=${msg}`,'_blank');
+}
+function rejoindreMesh(){
+let n=document.getElementById('newGardienNom').value, z=document.getElementById('newGardienZone').value, t=document.getElementById('newGardienTel').value;
+if(!n||!z||!t) return alert('Remplis tout');
+let msg=`🤝 DEMANDE BOUSSOLE CITOYENNE%0ANom:${n}%0AQuartier:${z}%0ATel:${t}`;
+let dest = contacts[0]?.tel || '2250700000000';
+window.open(`https://wa.me/${dest}?text=${msg}`,'_blank');
+}
+</script>
+</body>
+</html>
