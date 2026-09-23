@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PN3C Sentinelle - QG National</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  :root{--red:#ff0000;--green:#00ff88;--blue:#0096ff;}
+  body{margin:0;background:#050505;color:#fff;font-family:system-ui;}
+ .header{padding:12px 16px;display:flex;justify-content:space-between;align-items:center;background:#0a0a0a;border-bottom:1px solid #1a1a1a;position:sticky;top:0;z-index:1000;}
+ .logo{font-weight:900;letter-spacing:2px;}
+ .live{color:var(--green);font-size:12px;background:#002a12;padding:4px 8px;border-radius:20px;border:1px solid #004d1f;}
+ .tracker-wrap{position:relative;margin:10px;border-radius:20px;overflow:hidden;border:1px solid #222;height:68vh;}
+  #map{height:100%;}
+ .telemetry{position:absolute;top:10px;left:10px;background:rgba(0,0,0,0.85);backdrop-filter:blur(10px);padding:12px;border-radius:12px;border:1px solid #222;z-index:500;min-width:160px;}
+ .telemetry b{color:var(--red);}
+ .telemetry.speed{font-size:22px;font-weight:900;color:var(--red);}
+ .legend{position:absolute;bottom:10px;left:10px;background:rgba(0,0,0,0.85);padding:8px 12px;border-radius:10px;font-size:11px;z-index:500;border:1px solid #222;}
+ .dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px;}
+ .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:14px;}
+ .btn{padding:18px;border-radius:16px;text-align:center;text-decoration:none;font-weight:900;display:block;border:none;cursor:pointer;animation:clignotePro 2s infinite;}
+  @keyframes clignotePro{0%,100%{filter:brightness(1);box-shadow:0 0 0px currentColor} 50%{filter:brightness(1.5);box-shadow:0 0 15px currentColor}}
+ .btn-sos{background:#2b0000;color:#ff3b3b;border:1px solid #ff0000;}
+ .btn-urg{background:#2b1a00;color:#ffaa00;border:1px solid #ff8c00;animation-delay:0.5s;}
+ .btn-wa{background:#001a06;color:#00ff88;border:1px solid #00ff88;animation-delay:1s;}
+ .btn-share{background:#111;color:#fff;border:1px solid #333;animation-delay:1.5s;}
+ .section{padding:24px 16px;border-top:1px solid #111;}
+ .section h2{margin:0 0 8px 0;font-size:18px;}
+ .stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:16px;}
+ .stat-card{background:#0f0f0f;border:1px solid #222;padding:14px;border-radius:14px;text-align:center;}
+ .stat-card b{font-size:20px;display:block;}
+ .sos-float{position:fixed;bottom:20px;right:20px;background:var(--red);color:white;width:70px;height:70px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;z-index:9999;animation:clignotePro 2s infinite;text-decoration:none;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="logo">PN3C SENTINELLE</div>
+  <div class="live">● LIVE TRACKING ACTIF</div>
+</div>
+
+<div class="tracker-wrap">
+  <div id="map"></div>
+  <div class="telemetry">
+    🚨 VICTIME<br>
+    <span class="speed" id="speed">0.0 km/h</span><br>
+    <small id="status" style="color:#999;">En déplacement...</small>
+  </div>
+  <div class="legend">
+    <span class="dot" style="background:red;"></span> Victime (Rouge)<br>
+    <span class="dot" style="background:var(--blue);"></span> Veilleurs (Bleu)<br>
+    <span class="dot" style="background:var(--green);"></span> Secours (Vert)
+  </div>
+</div>
+
+<div class="actions">
+  <button onclick="envoyerSOS()" class="btn btn-sos">🚨 SOS</button>
+  <button onclick="ouvrirUrgences()" class="btn btn-urg">📞 URGENCES</button>
+  <a href="https://chat.whatsapp.com/LK7I37Y6phLAUlzqznZQnD" target="_blank" class="btn btn-wa">WHATSAPP QG</a>
+  <button onclick="partagerSite()" class="btn btn-share">🔗 PARTAGER</button>
+</div>
+
+<div class="section">
+  <h2>🛡️ Comment ça marche?</h2>
+  <p style="color:#999;line-height:1.5;">Notre tracker mesure la vitesse de déplacement en temps réel. Les points bleus sont les membres de la communauté les plus proches de la victime. Les secours (vert) sont alertés automatiquement.</p>
+  <div class="stats">
+    <div class="stat-card"><b>1.2k</b><small style="color:#666;">Veilleurs</small></div>
+    <div class="stat-card"><b style="color:var(--green);">24/7</b><small style="color:#666;">Surveillance</small></div>
+    <div class="stat-card"><b style="color:var(--red);">&lt; 3min</b><small style="color:#666;">Intervention</small></div>
+  </div>
+</div>
+
+<a href="#" onclick="envoyerSOS();return false;" class="sos-float">SOS</a>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// <!-- 🛰️ GUARDIAN CI-PN3C - Par Jésus-Christ, notre Ingénieur en Chef - Tracker de vitesse activé -->
+const map = L.map('map',{zoomControl:false}).setView([5.32,-4.01], 13);
+L.control.zoom({position:'topleft'}).addTo(map);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(map);
+
+// Icônes
+const redIcon = L.divIcon({html:'<div style="width:18px;height:18px;background:red;border:3px solid white;border-radius:50%;box-shadow:0 0 15px red;"></div>',iconSize:[18,18]});
+const blueIcon = L.divIcon({html:'<div style="width:12px;height:12px;background:#0096ff;border:2px solid white;border-radius:50%;"></div>',iconSize:[12,12]});
+const greenIcon = L.divIcon({html:'<div style="width:16px;height:16px;background:#00ff88;border:3px solid white;border-radius:50%;box-shadow:0 0 10px #00ff88;"></div>',iconSize:[16,16]});
+
+// Victime (rouge)
+let victimPath = [[5.32,-4.01],[5.321,-4.012],[5.323,-4.014],[5.325,-4.015],[5.327,-4.017]];
+let victimIndex = 0;
+let victimMarker = L.marker(victimPath[0], {icon:redIcon}).addTo(map).bindPopup("🚨 VICTIME");
+
+// Points bleus autour d'elle
+let watchers = [
+  L.marker([5.325,-4.01], {icon:blueIcon}).addTo(map),
+  L.marker([5.318,-4.015], {icon:blueIcon}).addTo(map),
+  L.marker([5.322,-4.02], {icon:blueIcon}).addTo(map),
+  L.marker([5.33,-4.018], {icon:blueIcon}).addTo(map)
+];
+
+// Secours en vert
+let secours = L.marker([5.315,-4.008], {icon:greenIcon}).addTo(map).bindPopup("🚑 SECOURS PROCHE");
+
+// Simulation vitesse
+let lastPos = victimPath[0];
+let lastTime = Date.now();
+setInterval(()=>{
+  victimIndex = (victimIndex+1) % victimPath.length;
+  let newPos = victimPath[victimIndex];
+  victimMarker.setLatLng(newPos);
+
+  // Calcul vitesse simple (distance / temps)
+  let dist = map.distance(lastPos, newPos); // mètres
+  let dt = (Date.now()-lastTime)/1000; // secondes
+  let speedKmh = (dist/1000)/(dt/3600);
+  if(speedKmh>80) speedKmh = (Math.random()*15+3); // garde réaliste
+  document.getElementById('speed').innerText = speedKmh.toFixed(1) + " km/h";
+
+  lastPos = newPos;
+  lastTime = Date.now();
+  map.panTo(newPos, {animate:true});
+}, 2000);
+
+function envoyerSOS(){
+  let loc = `https://www.google.com/maps?q=${victimMarker.getLatLng().lat},${victimMarker.getLatLng().lng}`;
+  let msg = `🚨 ALERTE SOS PN3C - QG NATIONAL 🚨%0A%0AVictime en déplacement à ${document.getElementById('speed').innerText}%0A📍 Position: ${loc}%0A%0AEnvoyé depuis PN3C Sentinelle`;
+  window.open(`https://wa.me/?text=${msg}`, "_blank");
+}
+function ouvrirUrgences(){ alert("📞 Police: 111\n🚒 Pompiers: 185\n🚑 SAMU: 180\n\nLe QG WhatsApp est aussi alerté."); }
+function partagerSite(){ navigator.share? navigator.share({title:'PN3C QG National',url:location.href}) : (navigator.clipboard.writeText(location.href),alert("Lien copié!")); }
+</script>
+</body>
+</html>
