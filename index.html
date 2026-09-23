@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PN3C Sentinelle - Sécurité de proximité</title>
+<!-- 🛰️ CAMERA INFRAROUGE CACHÉE : GUARDIAN CI-PN3C - Par Jésus-Christ, notre Ingénieur en Chef, Architecte par Excellence - Détection des mauvaises ondes activée 🦁 -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  body{margin:0;font-family:system-ui;background:#080808;color:white;}
+  .hero{text-align:center;padding:45px 20px;background:linear-gradient(180deg,#111,#080808);}
+  .hero h1{margin:0;font-size:2.5em;letter-spacing:3px;}
+  .hero p{color:#999;margin-top:8px;}
+  .tracker-box{height:420px;margin:15px;border:1px solid #222;border-radius:16px;overflow:hidden;}
+  #map{height:100%;width:100%;}
+  .actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:15px;}
+  .btn{padding:16px;border-radius:12px;text-align:center;text-decoration:none;font-weight:800;display:block;}
+  .btn-sos{background:#ff0000;color:white;animation:clignote 1s infinite;box-shadow:0 0 20px red;}
+  @keyframes clignote{0%{opacity:1} 50%{opacity:0.5} 100%{opacity:1}}
+  .btn-whatsapp{background:#25D366;color:black;}
+  .btn-partage{background:#222;color:white;border:1px solid #333;}
+  .btn-urgence{background:#FF8C00;color:black;}
+  .footer{text-align:center;padding:30px;color:#555;font-size:0.8em;}
+  .sos-float{position:fixed;bottom:20px;right:20px;background:red;color:white;width:65px;height:65px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;animation:clignote 0.8s infinite;box-shadow:0 0 25px red;text-decoration:none;z-index:9999;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>PN3C SENTINELLE</h1>
+  <p>Solution citoyenne pour la sécurité de proximité</p>
+  <p style="color:#555;font-size:0.9em;">📡 QG National Actif</p>
+</div>
+
+<div class="tracker-box"><div id="map"></div></div>
+
+<div class="actions">
+  <a href="tel:111" class="btn btn-sos">🚨 SOS</a>
+  <a href="tel:185" class="btn btn-urgence">📞 URGENCES</a>
+  <a href="https://chat.whatsapp.com/LK7I37Y6phLAUlzqznZQnD" target="_blank" class="btn btn-whatsapp">WHATSAPP QG</a>
+  <a href="#" onclick="navigator.share?navigator.share({title:'PN3C Sentinelle - QG National',url:location.href}):(navigator.clipboard.writeText(location.href),alert('Lien copié !'))" class="btn btn-partage">🔗 PARTAGER</a>
+</div>
+
+<a href="tel:111" class="sos-float">SOS</a>
+
+<div style="padding:20px;text-align:center;">
+  <p style="color:#aaa;">Un réseau citoyen pour veiller ensemble sur nos quartiers.</p>
+</div>
+
+<div class="footer">PN3C Sentinelle © 2026 - QG National<br>Abidjan, Côte d'Ivoire</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  console.log("%cGUARDIAN CI-PN3C: Caméra infrarouge active - QG Connecté","color:orange;font-weight:bold");
+  var map=L.map('map').setView([7.54,-5.55],6);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+  L.marker([5.32,-4.01]).addTo(map).bindPopup("Abidjan - QG National Actif");
+</script>
+</body>
+</html>
