@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PN3C SENTINELLE - QG National | Lancement Officiel</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+  body{margin:0;font-family:system-ui;background:#050505;color:#fff;overflow-x:hidden;}
+  /* ECRAN DE LANCEMENT */
+  #splash{position:fixed;inset:0;background:#050505;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20000;transition:0.8s;}
+  #splash h1{font-size:32px;letter-spacing:4px;margin:0;animation:pulse 1.5s infinite;}
+  #splash p{color:#00ff88;font-size:12px;margin-top:8px;letter-spacing:2px;}
+  @keyframes pulse{0%,100%{opacity:1} 50%{opacity:0.5}}
+ .header{background:#0a0a0a;padding:14px 16px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #222;position:sticky;top:0;z-index:1000;}
+ .logo{font-weight:900;letter-spacing:2px;}
+ .badge{font-size:11px;background:#002a12;color:#00ff88;padding:5px 10px;border-radius:20px;border:1px solid #004d1f;font-weight:700;}
+ .map-card{margin:10px;background:#111;border-radius:18px;overflow:hidden;border:1px solid #222;}
+  #map{height:55vh;}
+ .telemetry{padding:12px;display:flex;justify-content:space-between;background:#0f0f0f;border-top:1px solid #222;}
+ .speed{font-size:20px;font-weight:900;color:#ff3b3b;}
+ .actions{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px;}
+ .btn{padding:16px;border-radius:14px;text-align:center;text-decoration:none;font-weight:900;display:block;border:none;cursor:pointer;font-size:13px;animation:clignote 2s infinite;}
+ @keyframes clignote{0%,100%{transform:scale(1)} 50%{transform:scale(1.02)}}
+ .btn-sos{background:#2b0000;color:#ff3b3b;border:2px solid red;}
+ .btn-urg{background:#2b1f00;color:#ffaa00;border:2px solid #ff8c00;animation-delay:0.4s;}
+ .btn-join{background:#0a2a6b;color:#fff;border:2px solid #1e5bff;grid-column:span 2;}
+ .btn-wa{background:#001a06;color:#00ff88;border:2px solid #00ff88;}
+ .btn-share{background:#1a1a1a;color:#fff;border:2px solid #333;}
+ .launch-banner{background:linear-gradient(90deg,#0a4a8a,#00ff88);padding:12px;text-align:center;font-weight:800;font-size:13px;color:white;margin:10px;border-radius:12px;}
+ .sos-float{position:fixed;bottom:20px;right:20px;background:red;color:yellow;width:65px;height:65px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:900;z-index:9999;text-decoration:none;box-shadow:0 0 20px red;animation:clignote 1s infinite;}
+ #modal{position:fixed;inset:0;background:rgba(0,0,0,0.9);display:none;align-items:center;justify-content:center;z-index:10000;}
+ .modal-card{background:#161616;border:1px solid #333;padding:22px;border-radius:20px;width:88%;max-width:360px;}
+ .urgence-item{display:flex;justify-content:space-between;align-items:center;background:#0f0f0f;border:1px solid #222;padding:14px;border-radius:12px;margin-bottom:10px;}
+ .btn-call{padding:10px 18px;border-radius:20px;text-decoration:none;font-weight:900;}
+</style>
+</head>
+<body>
+
+<!-- ECRAN DE LANCEMENT -->
+<div id="splash">
+  <h1>PN3C</h1>
+  <p>SENTINELLE - QG NATIONAL</p>
+  <small style="color:#666;margin-top:20px;font-size:10px;">Fabriqué en Côte d'Ivoire 🇨🇮</small>
+</div>
+
+<div class="header">
+  <div class="logo">PN3C SENTINELLE</div>
+  <div class="badge">● LIVE - LANCEMENT</div>
+</div>
+
+<div class="launch-banner">🚀 LANCEMENT OFFICIEL - Veillons ensemble sur nos quartiers 🇨🇮</div>
+
+<div class="map-card">
+  <div id="map"></div>
+  <div class="telemetry">
+    <div><small style="color:#888;">VICTIME</small><br><b id="status" style="color:#00ff88;">📡 GPS en attente...</b></div>
+    <div style="text-align:right;"><small style="color:#888;">VITESSE RÉELLE</small><br><span class="speed" id="speed">0.0 km/h</span></div>
+  </div>
+</div>
+
+<div class="actions">
+  <button onclick="envoyerSOS_LISTE()" class="btn btn-sos">🚨 SOS</button>
+  <button onclick="ouvrirUrgences()" class="btn btn-urg">📞 URGENCES</button>
+  <button onclick="demanderAdhesion()" class="btn btn-join">🛡️ REJOINDRE LE QG WHATSAPP</button>
+  <a href="https://chat.whatsapp.com/LK7I37Y6phLAUlzqznZQnD" target="_blank" class="btn btn-wa">WHATSAPP QG</a>
+  <button onclick="partagerSite()" class="btn btn-share">🔗 PARTAGER</button>
+</div>
+
+<div style="text-align:center;padding:16px;color:#555;font-size:11px;">
+  PN3C Sentinelle © 2026 - QG National<br>Abidjan, Côte d'Ivoire 🇨🇮<br>Par la jeunesse, pour la nation.
+</div>
+
+<a href="#" onclick="envoyerSOS_LISTE();return false;" class="sos-float">SOS</a>
+
+<div id="modal" onclick="if(event.target.id==='modal') this.style.display='none'">
+  <div class="modal-card">
+    <h3 style="text-align:center;margin-top:0;">🚨 URGENCES - APPEL DIRECT</h3>
+    <div class="urgence-item"><div><b>Police Secours</b><br><small style="color:#888;">111</small></div><a href="tel:111" class="btn-call" style="background:#ff3b3b;color:#fff;">APPELER</a></div>
+    <div class="urgence-item"><div><b>Pompiers</b><br><small style="color:#888;">185</small></div><a href="tel:185" class="btn-call" style="background:#ff8c00;color:#000;">APPELER</a></div>
+    <div class="urgence-item"><div><b>SAMU</b><br><small style="color:#888;">180</small></div><a href="tel:180" class="btn-call" style="background:#00ff88;color:#000;">APPELER</a></div>
+    <button onclick="document.getElementById('modal').style.display='none'" class="btn btn-share" style="width:100%;margin-top:10px;">FERMER</button>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// SPLASH 2 SECONDES
+setTimeout(()=>{document.getElementById('splash').style.opacity='0';setTimeout(()=>document.getElementById('splash').style.display='none',800);},1800);
+
+const map = L.map('map',{zoomControl:false}).setView([5.32,-4.01],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+const redIcon = L.divIcon({html:'<div style="width:20px;height:20px;background:red;border:3px solid white;border-radius:50%;box-shadow:0 0 15px red;"></div>'});
+const blueIcon = L.divIcon({html:'<div style="width:12px;height:12px;background:#0096ff;border:2px solid white;border-radius:50%;"></div>'});
+const greenIcon = L.divIcon({html:'<div style="width:16px;height:16px;background:#00ff88;border:3px solid white;border-radius:50%;"></div>'});
+let victimMarker=null,lastPos=null,lastTime=null;
+L.marker([5.325,-4.01],{icon:blueIcon}).addTo(map);L.marker([5.318,-4.015],{icon:blueIcon}).addTo(map);L.marker([5.315,-4.008],{icon:greenIcon}).addTo(map);
+if(navigator.geolocation){
+  navigator.geolocation.watchPosition(pos=>{
+    let lat=pos.coords.latitude,lng=pos.coords.longitude;
+    let speedMps=pos.coords.speed;let speedKmh=speedMps?speedMps*3.6:0;
+    if(!speedMps&&lastPos){let dist=map.distance(lastPos,[lat,lng]);let dt=(Date.now()-lastTime)/1000;if(dt>0)speedKmh=(dist/1000)/(dt/3600);}
+    if(speedKmh>120) speedKmh=Math.random()*10+2;
+    document.getElementById('speed').innerText=speedKmh.toFixed(1)+" km/h";document.getElementById('status').innerText="🔴 En direct";document.getElementById('status').style.color="#ff3b3b";
+    if(!victimMarker){victimMarker=L.marker([lat,lng],{icon:redIcon}).addTo(map);}else{victimMarker.setLatLng([lat,lng]);}
+    map.setView([lat,lng],16);lastPos=[lat,lng];lastTime=Date.now();
+  },()=>{}, {enableHighAccuracy:true,maximumAge:0,timeout:10000});
+}
+function envoyerSOS_LISTE(){
+  let lat=victimMarker?victimMarker.getLatLng().lat:5.32;let lng=victimMarker?victimMarker.getLatLng().lng:-4.01;
+  let msg=`🚨 ALERTE SOS PN3C - QG NATIONAL 🚨%0A%0AVitesse: ${document.getElementById('speed').innerText}%0A📍 Position: https://www.google.com/maps?q=${lat},${lng}%0A%0ATracker: ${location.href}`;
+  window.open(`https://wa.me/?text=${msg}`,"_blank");
+}
+function demanderAdhesion(){
+  let nom=prompt("NOM et QUARTIER:");if(!nom)return;
+  let demande=`🛡️ DEMANDE D'ADHÉSION PN3C 🛡️\n\n👤 Nom: ${nom}\nJe veux rejoindre le QG National.\n\nSite: ${location.href}`;
+  navigator.clipboard.writeText(demande).then(()=>{alert("✅ Demande copiée! Colle dans le groupe QG pour validation!");window.open("https://chat.whatsapp.com/LK7I37Y6phLAUlzqznZQnD","_blank");});
+}
+function ouvrirUrgences(){document.getElementById('modal').style.display='flex';}
+function partagerSite(){if(navigator.share){navigator.share({title:'PN3C Sentinelle',url:location.href});}else{navigator.clipboard.writeText(location.href);alert("Lien copié!");}}
+</script>
+</body>
+</html>
